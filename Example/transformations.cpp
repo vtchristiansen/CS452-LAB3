@@ -1,8 +1,7 @@
-#include "initShaders.h"
+#include "vtchristiansen_shaders.h"
 #include <cstdlib>
 using namespace std;
 
-void rotate(GLuint locate);
 
 GLuint vaoID,vboID[2],eboID;
 GLuint program;
@@ -57,13 +56,25 @@ void init(){
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,eboID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(elems),elems,GL_STATIC_DRAW);
 
-	ShaderInfo shaders[]={
-  { GL_VERTEX_SHADER , "vertexshader.glsl"},
-  { GL_FRAGMENT_SHADER , "fragmentshader.glsl"}, 
-  { GL_NONE , NULL} 
-  };
-		
-  program=initShaders(shaders);
+  GLuint fragshader=fragShader("fragmentshader.glsl");
+  GLuint vertshader=vertShader("vertexshader.glsl");
+  
+  program=createProgram(fragshader,vertshader);
+  glUseProgram(program);
+ 
+ glm::mat4 view;
+  view = glm::lookAt(//position and direction of camera
+ 	  		glm::vec3(0.0f, 0.0f,50.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+  GLint tempLoc = glGetUniformLocation(program, "viewMatrix");//Matrix that handles the camera movement
+  glUniformMatrix4fv(tempLoc, 1, GL_FALSE, &view[0][0]);
+  
+  glm::mat4 mainProjMatrix;
+  mainProjMatrix = glm::perspective(57.0,1.0,.1,500.0);//Matrix that handle the orthographic or perspective viewing
+  tempLoc = glGetUniformLocation(program, "Matrix");
+  glUniformMatrix4fv(tempLoc, 1, GL_FALSE, &mainProjMatrix[0][0]);
   
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -84,7 +95,7 @@ void display(SDL_Window* screen){
   GLint tempLoc = glGetUniformLocation(program,"modelMatrix");//Matrix that handle the transformations
 	glUniformMatrix4fv(tempLoc,1,GL_FALSE,&trans[0][0]);
 	
-	glDrawElements(GL_POLYGON,24,GL_UNSIGNED_BYTE,NULL);
+	glDrawElements(GL_QUADS,24,GL_UNSIGNED_BYTE,NULL);
 	glFlush();
 	SDL_GL_SwapWindow(screen);
 }
@@ -110,13 +121,6 @@ SDL_Event event;
 					case SDLK_j:yaw+=2;break;
 					case SDLK_l:yaw-=2;break;
 				}
-		/*case SDL_MOUSEMOTION:
-				yaw+=((event.motion.x)-300)/10.0;
-				pit+=((event.motion.y)-300)/10.0;
-				SDL_WarpMouseInWindow(screen,300,300);
-				
-			}
-			*/
 		}
 	}
 }
